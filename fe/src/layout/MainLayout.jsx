@@ -1,9 +1,10 @@
 import React from 'react';
 import { Breadcrumb, Typography, Layout, theme } from 'antd';
+import { Outlet } from 'react-router'
 
 const { Content } = Layout;
 
-const MainLayout = ({ children }) => {
+const MainLayout = () => {
     const { token: { colorBgContainer, borderRadiusLG } } = theme.useToken();
     const { Title } = Typography
     return (
@@ -21,7 +22,7 @@ const MainLayout = ({ children }) => {
                         borderRadius: borderRadiusLG,
                     }}
                 >
-                    {children}
+                    <Outlet/>
                 </div>
             </Content>
         </Layout>

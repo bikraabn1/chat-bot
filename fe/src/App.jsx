@@ -1,12 +1,11 @@
-import MainLayout from './layout/main-layout'
-import ChatPage from './pages/chat-page/ChatPage'
-
+import Router from './router/Router'
+import { CookiesProvider } from 'react-cookie'
 const App = () => {
   return (
-    <div style={{height: "100vh"}}>
-      <MainLayout>
-        <ChatPage/>
-      </MainLayout>
+    <div style={{ height: "100vh" }}>
+      <CookiesProvider>
+        <Router />
+      </CookiesProvider>
     </div>
   )
 }
