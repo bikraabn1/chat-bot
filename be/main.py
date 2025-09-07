@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from auth import router as auth_router
+from upload import router as upload_router
 import socketio
 import httpx
 import json
@@ -23,6 +24,7 @@ fast_api_app.add_middleware(
 load_dotenv()
 
 fast_api_app.include_router(auth_router)
+fast_api_app.include_router(upload_router)
 
 
 @fast_api_app.get("/")
