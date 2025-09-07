@@ -7,7 +7,7 @@ export const useAuth = () => {
         const rootUrl = "https://accounts.google.com/o/oauth2/v2/auth"
 
         const options = {
-            redirect_uri: `${import.meta.env.VITE_BASE_URL}/auth/callback`,
+            redirect_uri: `${import.meta.env.VITE_BACKEND_URL}/auth/callback`,
             client_id: import.meta.env.VITE_CLIENT_ID,
             access_type: "offline",
             response_type: "code",
@@ -25,7 +25,7 @@ export const useAuth = () => {
     const handleLoginWithJWT = async (username, password) => {
         try {
             await axios.post(
-                `${import.meta.env.VITE_BASE_URL}/auth/login-jwt`,
+                `${import.meta.env.VITE_BACKEND_URL}/auth/login-jwt`,
                 {
                     username: username,
                     password: password

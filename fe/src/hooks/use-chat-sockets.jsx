@@ -1,50 +1,78 @@
-import { useState, useEffect } from 'react'
-import useWebsocket, { ReadyState } from 'react-use-websocket'
-import { useChatStore } from '../store/use-chat-store'
+import { useState, useEffect, useRef } from 'react';
+import { useChatStore } from '../store/use-chat-store';
+import io from 'socket.io-client';
 
 export const useChatSocket = () => {
-    const { setChat, updateChat } = useChatStore()
-    const socketURL = import.meta.env.VITE_WS_URL
-    const [currentMessageId, setCurrentMessageId] = useState(null)
-    const { sendMessage, lastMessage, readyState } = useWebsocket(socketURL)
+    const { setChat, updateChat } = useChatStore();
+    const socketURL = import.meta.env.VITE_BACKEND_URL;
+    const [socket, setSocket] = useState(null);
+    const currentMessageIdRef = useRef(null);
 
     useEffect(() => {
-        if (lastMessage !== null) {
-            const data = JSON.parse(lastMessage.data)
+        const newSocket = io(socketURL);
+        setSocket(newSocket);
 
-            if (data.type === "content") {
-                if(!currentMessageId){
-                    const newId = self.crypto.randomUUID()
-                    setCurrentMessageId(newId)
-                    setChat({
-                        id: newId,
-                        text: data.data,
-                        isMine: false
-                    })
-                }else{
-                    updateChat(currentMessageId, (prev) => ({
-                        ...prev,
-                        text: prev.text + data.data
-                    }))
-                }
-            }
+        newSocket.on('connect', () => {
+            console.log('Connected to server');
+        });
 
-            if (data.type === "end") {
-                if(currentMessageId){
-                    setCurrentMessageId(null)
-                }
+        newSocket.on('disconnect', () => {
+            console.log('Disconnected from server');
+        });
+
+        newSocket.on('stream_chunk', (data) => {
+            console.log('Stream chunk:', data);
+            
+            if (!currentMessageIdRef.current) {
+                const newId = self.crypto.randomUUID();
+                currentMessageIdRef.current = newId;
+                setChat({
+                    id: newId,
+                    text: data.data,
+                    isMine: false,
+                });
+            } else {
+                updateChat(currentMessageIdRef.current, (prev) => ({
+                    ...prev,
+                    text: prev.text + data.data,
+                }));
             }
-            return
+        });
+
+        newSocket.on('stream_end', (data) => {
+            console.log('Stream ended:', data);
+            currentMessageIdRef.current = null;
+        });
+
+        newSocket.on('error', (error) => {
+            console.error('Socket error:', error);
+            currentMessageIdRef.current = null;
+        });
+
+        return () => {
+            currentMessageIdRef.current = null;
+            newSocket.disconnect();
+        };
+    }, [socketURL, setChat, updateChat]);
+
+    const sendMessage = (message) => {
+        if (socket && socket.connected) {
+            currentMessageIdRef.current = null;
+            
+            const userMessageId = self.crypto.randomUUID();
+            setChat({
+                id: userMessageId,
+                text: message,
+                isMine: true,
+            });
+
+            socket.emit('user_prompt', { message });
+        } else {
+            console.error('Socket not connected');
         }
-    }, [lastMessage])
+    };
 
-    const connectionStatus = {
-        [ReadyState.CONNECTING]: 'Connecting',
-        [ReadyState.OPEN]: 'Open',
-        [ReadyState.CLOSING]: 'Closing',
-        [ReadyState.CLOSED]: 'Closed',
-        [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
-    }[readyState]
+    const connectionStatus = socket?.connected ? 'Open' : 'Closed';
 
-    return { sendMessage, lastMessage, readyState, connectionStatus }
-}
+    return { sendMessage, connectionStatus };
+};
